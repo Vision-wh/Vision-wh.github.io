@@ -2,7 +2,7 @@
 layout: post
 title:  "大创学习笔记-HCGrid"
 date:   2020-09-15 21:25:56 +0800
-categories: word
+categories: md
 ---
 
 * 流程

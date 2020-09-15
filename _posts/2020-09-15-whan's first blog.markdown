@@ -2,7 +2,7 @@
 layout: post
 title:  "WHan's first blog for demo"
 date:   2020-09-15 20:05:02 +0800
-categories: word
+categories: md
 ---
 
 ### This is a beta for my following blogs.
