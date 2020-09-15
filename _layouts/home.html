@@ -30,7 +30,8 @@ layout: default
         <a class="post-link" href="{{ post.url | relative_url }}">
           <h2 class="post-title">{{ post.title | escape }}</h2>
         </a>
-        <hr color="#dddddd">
+        <hr style="margin:0px;background-color:#eee;height:0.5px;border:none;" />
+        
         <div class="post-meta">
           <div class="post-date">
             <i class="icon-calendar"></i>
@@ -49,7 +50,7 @@ layout: default
             {{ post.excerpt }}
           {%- endif -%}
         </div>
-        <hr style="margin:0px;background-color:#eee;height:0.5px;border:none;" />
+        <hr color="#dddddd">
 
       </li>
     {%- endfor -%}
