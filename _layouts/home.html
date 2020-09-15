@@ -27,6 +27,7 @@ layout: default
       <li>
         
         {%- assign date_format = site.plainwhite.date_format | default: "%b %-d, %Y" -%}
+        <br>
         <a class="post-link" href="{{ post.url | relative_url }}">
           <h2 class="post-title">{{ post.title | escape }}</h2>
         </a>
@@ -50,6 +51,7 @@ layout: default
             {{ post.excerpt }}
           {%- endif -%}
         </div>
+        <br>
         <hr color="#dddddd">
 
       </li>
