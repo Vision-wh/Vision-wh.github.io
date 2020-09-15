@@ -21,11 +21,11 @@ plainwhite:
   anlytics_id: "Vision-wh"
   disqus_shortname: Vision
   html_lang: "en" # set the lang attribute of the <html> tag for the pages. See here for a list of codes: https://www.w3schools.com/tags/ref_country_codes.asp
-  navigation:
-      -title: My Work
-       url: "/my-work"
-      -title: Resume
-       url: "/resume"
+#   navigation:
+#       -title: My Work
+#        url: "/my-work"
+#       -title: Resume
+#         url: "/resume"
 
   # generate social links in footer
   social_links:
