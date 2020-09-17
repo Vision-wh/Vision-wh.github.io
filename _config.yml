@@ -11,7 +11,7 @@ sass:
   sass_dir: _sass
 plainwhite:
   name: Han W
-  tagline: Developer. Designer. Students
+  tagline: 一个乐观的悲观者/CS专业的fw
   date_format: "%b %-d, %Y"
   sitemap: true # set to true to generate sitemap.xml content
   search: true # set to true to enable searchbar
