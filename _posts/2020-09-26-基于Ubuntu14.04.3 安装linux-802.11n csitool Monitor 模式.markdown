@@ -1,0 +1,198 @@
+# 基于Ubuntu14.04.3 安装linux-802.11n csitool Monitor 模式 
+
+[toc]
+
+## 一.  操作系统和硬件配置
+
+- ##### 操作系统： ubuntu-14.04.3  (amd64)
+
+  - 系统镜像下载地址： 百度网盘
+
+  ​           链接：https://pan.baidu.com/s/1lkI73gSumcvDdBsdB3vyfg 
+  ​           提取码：1895
+
+  - 重装系统方法可参考：https://blog.csdn.net/weixin_43226231/article/details/100692676
+
+    
+
+- ##### 更换下载源： 最好更换为国内源，推荐阿里源，换源方法可参考：https://blog.csdn.net/qq_35451572/article/details/79516563?biz_id=102&utm_term=ubuntu%E5%9B%BD%E5%86%85%E6%BA%90&utm_medium=distribute.pc_search_result.none-task-blog-2~all~sobaiduweb~default-0-79516563&spm=1018.2118.3001.4187
+
+
+
+## 二.  准备工作——发射器接收器都需要的操作
+
+- ##### 在terminal输入以下指令：
+
+  ```sh
+  sudo apt-get install gcc make linux-headers-$(uname -r) git-core
+  CSITOOL_KERNEL_TAG=csitool-$(uname -r | cut -d . -f 1-2)
+  ```
+
+  
+
+- ##### 下载CSITOOL
+
+  - 官方链接：（不推荐） 
+
+    git clone https://github.com/dhalperi/linux-80211n-csitool.git
+
+
+  - 推荐下载链接：百度网盘
+
+    链接：https://pan.baidu.com/s/1JTfz-wAPU5WLyA_gHynK_Q 
+    提取码：1895
+
+    
+
+- ##### 接下来执行：
+
+  ```sh
+  cd linux-80211n-csitool
+  git checkout ${CSITOOL_KERNEL_TAG}
+  make -C /lib/modules/$(uname -r)/build M=$(pwd)/drivers/net/wireless/iwlwifi modules
+  sudo make -C /lib/modules/$(uname -r)/build M=$(pwd)/drivers/net/wireless/iwlwifi INSTALL_MOD_DIR=updates modules_install
+  ```
+
+  ```sh
+  sudo depmod
+  cd ..
+  git clone https://github.com/dhalperi/linux-80211n-csitool-supplementary.git
+  	for file in /lib/firmware/iwlwifi-5000-*.ucode; do sudo mv $file $file.orig; done
+  	sudo cp linux-80211n-csitool-supplementary/firmware/iwlwifi-5000-2.ucode.sigcomm2010 /lib/firmware/
+      sudo ln -s iwlwifi-5000-2.ucode.sigcomm2010 /lib/firmware/iwlwifi-5000-2.ucode
+  make -C linux-80211n-csitool-supplementary/netlink```
+  ```
+
+  
+
+  - *若直接用AP模式的话可执行以下指令：*
+
+    ```sh
+    sudo modprobe -r iwlwifi mac80211
+    sudo modprobe iwlwifi connector_log=0x1
+    sudo killall wpa_supplicant
+    ```
+
+  - *然后链接上没有密码的路由器，执行：*
+
+    ```sh
+    sudo linux-80211n-csitool-supplementary/netlink/log_to_file csi.dat
+    ```
+
+  - *打开一个新的终端执行：*
+
+    ```sh
+    sudo ping 192.168.1.1 -i 0.005
+    ```
+
+    *这样AP模式就可以开始接收数据了*
+
+- ##### 下载lorcon:
+
+  ```sh
+  sudo apt-get install libpcap-dev
+  git clone https://github.com/dhalperi/lorcon-old.git
+  cd lorcon-old
+  
+  ./configure
+  
+  make
+  
+  sudo make install
+  ```
+
+  
+
+## 三.  配置Monitor模式
+
+- ##### 将发射器的**/linux-80211n-csitool-supplementary/injection**目录下的**setup_inject.sh**改为以下代码：
+
+  ***(以下脚本可自行按需更改)***
+
+  ```sh
+  #!/usr/bin/sudo /bin/bash
+  rfkill unblock all
+  modprobe -r iwlwifi mac80211 cfg80211
+  modprobe iwlwifi debug=0x40000
+  ifconfig wlan0 2>/dev/null 1>/dev/null
+  while [ $? -ne 0 ]
+  do
+  	        ifconfig wlan0 2>/dev/null 1>/dev/null
+  done
+  iw dev wlan0 interface add mon0 type monitor
+  sudo ifconfig wlan0 down
+  sudo ifconfig mon0 up
+  iw mon0 set channel $1 $2
+  ifconfig mon0 up
+  sudo chmod 777 /sys/kernel/debug/
+  sudo chmod 777 /sys/kernel/debug/tracing/
+  echo 0x4101 | sudo tee `find /sys -name monitor_tx_rate`
+  ```
+
+
+
+- ##### 将接收器的**/linux-80211n-csitool-supplementary/injection**目录下的**setup_monitor_csi.sh**改为以下代码
+
+  ***(以下脚本可自行按需更改)***
+
+  ```sh
+  #!/usr/bin/sudo /bin/bash
+  modprobe -r iwlwifi mac80211 cfg80211
+  modprobe iwlwifi connector_log=0x1
+  # Setup monitor mode, loop until it works
+  iwconfig wlan0 mode monitor 2>/dev/null 1>/dev/null
+  while [ $? -ne 0 ]
+  do
+  	iwconfig wlan0 mode monitor 2>/dev/null 1>/dev/null
+  done
+  echo "1234444"
+  ifconfig wlan0 up
+  iw wlan0 set channel $1 $2
+  ifconfig wlan0 up
+  ```
+
+- ##### 在两台机子上都执行以下命令：
+
+  ```sh
+  cd ~
+  
+  cd linux-80211n-csitool-supplementary/injection
+  
+  make
+  ```
+
+
+
+## 四.  启动Monitor模式
+
+在/linux-80211n-csitool-supplementary/injection下执行以下步骤，即先cd /linux-80211n-csitool-supplementary/injection
+
+发射端：
+
+```sh
+ ./setup_inject.sh 64 HT20
+
+sudo ./random_packets 10000 100 1 1000
+```
+
+
+接收端
+
+```sh
+./setup_monitor_csi.sh 64 HT20
+
+sudo ../netlink/log_to_file log.dat
+```
+
+
+
+*如果发射端在重启之后正常启动，但是接收端没有接收到数据的话，就把发射器机子上的/linux-80211n-csitool-supplementary/injection文件夹下的.o文件删掉，然后在该目录下重新make就可以了。*
+
+
+
+
+
+参考文章：https://blog.csdn.net/bixianren9179/article/details/103802974
+
+​				   https://blog.csdn.net/dfcaihg/article/details/83552072
+
