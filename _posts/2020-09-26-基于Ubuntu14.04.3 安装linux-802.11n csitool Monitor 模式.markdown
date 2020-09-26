@@ -1,3 +1,9 @@
+---
+layout: post
+title:  "基于Ubuntu14.04.3 安装linux-802.11n csitool Monitor 模式"
+date:   2020-09-26 17:13:44 +0800
+categories: md
+---
 # 基于Ubuntu14.04.3 安装linux-802.11n csitool Monitor 模式 
 
 [toc]
