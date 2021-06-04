@@ -1,0 +1,37 @@
+# 本周工作进展
+
+​	本周我们主要学习了如何理解 Pytorch 中的爱因斯坦求和 (einsum) 问题，探究了pytorch定义einsum的c++扩展的主要工作流程。爱因斯坦求和约定（einsum）可实现包括但不限于：向量内积，向量外积，矩阵乘法，转置和张量收缩（tensor contraction）等张量操作，运用 einsum 可以很方便的实现复杂的张量操作，而且不容易出错。
+
+
+
+## einsum目前主要的实现方式
+
+​	目前我们可以使用numpy、TensorFlow以及pytorch中封装好的einsum方法来实现einsum的基本功能，但由于现有Python实现einsum的方法都是已经封装完成的，我们很难通过现有的方法来优化einsum的执行效率。所以，探究如何自定义一个einsum的扩展算子并使得它可被调用以达到使得einsum可优化是必要的。
+
+​	C++ extension与pytorch的相互解耦，分开编译，所以增加算子不需要修改pytorh的源码。原理是通过pybind11，将C++编译为pytroch的一个模块，这样就可以在pytorch中通过这个新的模块来执行新的OP。
+
+​	目前实现pytorch自定义c++/cuda算子的主要流程如下：
+
+ 1. **利用C++写好自定义层发功能，主要包括einsum各种张量操作的方法，以及pybind11的内容**
+
+    ​	在cpp文件中，我们首先需要``#include <torch/extension.h>``，这其中包含很多重要的模块，如用于python和C++11交互的pybind11，以及包含Tensor的一系列定义操作。然后需要编写einsum对张量操作的c++实现代码。最后要在`PYBIND11_MODULE`宏中将编写的函数写入，`PYBIND11_MODULE` 的作用是为 C++ 代码接入 Python 解释器提供入口。
+
+    
+
+ 2. **编写setup.py脚本， 并利用python提供的setuptools来编译并加载C++代码**
+
+    ​	基于预编译的扩展是需要编译的，而`setup.py`文件是基于`setuptools`的编译脚本。这其中需要从torch.utils.cpp_extension 中import `BuildExtension, CppExtension`，而这两个函数都会把系统目录中的 `torch/include` 加入到 C++ 编译时的`include_dirs`中。setup.py 还包括编译需要的其他信息，例如扩展文件的源文件地址等，`include_dirs`, `define_macros`, `extra_compile_args`等参数都会通过 前面提到的`BuildExtension`函数形成最终的gcc/nvcc编译命令。
+
+    
+
+ 3. **编译安装，在python中调用C++扩展接口**
+
+    ​	完成setup.py以后，需要在终端执行`python setup.py install`，此时einsum还没有封装，无法在Python中直接import，还需要使用torch.autograd.Function来将这个扩展写成一个函数，以达到可以调用的目的。然后可以在需要的地方使用Function.apply(*args)从而完成了一个完整的pytorch中einsum的C++扩展。
+
+    
+
+## 目前工作进展和规划
+
+​	目前对einsum的Python实现方式有了全面的理解，并初步学习和了解了使用c++实现einsum的方法，下一步工作将集中于在pytorch的c++扩展中实现einsum的对张量的各种操作方法，并尝试编译和实现调用。
+
+​	
